@@ -26,8 +26,8 @@ class SecurityController extends AbstractController
         return $this->render('security/login.html.twig', ['last_username' => $lastUsername, 'error' => $error]);
     }
 
-    #[Route(path:"/api/login_check", name: 'api_login')]
-    public function api_login(): JsonResponse
+    #[Route(path:"/api/login_check", name: 'api_login_check')]
+    public function api_login_check(): JsonResponse
     {
         $client = new Client();
 
@@ -35,5 +35,21 @@ class SecurityController extends AbstractController
             'email' => $client->getEmail(),
             'roles' => $client->getRoles(),
         ]);
+    }
+
+    #[Route(path:"/api/login", name: 'api_login')]
+    public function api_login(AuthenticationUtils $authenticationUtils): JsonResponse
+    {
+        // if ($this->getUser()) {
+        //     return $this->redirectToRoute('target_path');
+        // }
+
+        // get the login error if there is one
+        $error = $authenticationUtils->getLastAuthenticationError();
+        // last username entered by the user
+        $lastUsername = $authenticationUtils->getLastUsername();
+
+        return new JsonResponse(['last_username' => $lastUsername, 'error' => $error]);
+        // $this->render('security/login.html.twig', ['last_username' => $lastUsername, 'error' => $error]);
     }
 }
