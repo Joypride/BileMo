@@ -8,4 +8,4 @@ kernel:
 
 api_login_check:
     path: /api/login_check
-    controller: Symfony\Bundle\FrameworkBundle\Controller\SecurityController
+    # controller: Symfony\Bundle\FrameworkBundle\Controller\SecurityController
