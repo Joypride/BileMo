@@ -13,18 +13,20 @@ class User
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column()]
+    #[Groups(["getUsers"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getClients"])]
+    #[Groups(["getClients", "getUsers"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getClients"])]
+    #[Groups(["getClients", "getUsers"])]
     private ?string $email = null;
 
-    #[ORM\ManyToOne(inversedBy: 'users')]
+    #[ORM\ManyToOne(inversedBy: 'users', cascade: ["persist"])]
     #[ORM\JoinColumn(nullable: false, onDelete:"CASCADE")]
+    #[Groups(["getUsers"])]
     private ?Client $client = null;
 
     public function getId(): ?int

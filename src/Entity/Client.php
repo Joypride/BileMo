@@ -20,19 +20,19 @@ class Client implements UserInterface, \Serializable, PasswordAuthenticatedUserI
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getClients"])]
+    #[Groups(["getClients", "getUsers"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getClients"])]
+    #[Groups(["getClients", "getUsers"])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getClients"])]
+    #[Groups(["getClients", "getUsers"])]
     private ?string $password = null;
 
     #[ORM\Column(type: 'json')]
-    #[Groups(["getClients"])]
+    #[Groups(["getClients", "getUsers"])]
     private $roles = [];
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: User::class)]

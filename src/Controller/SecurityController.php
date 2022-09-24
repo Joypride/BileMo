@@ -23,7 +23,7 @@ class SecurityController extends AbstractController
     }
 
     #[Route(path:"/api/login_check", name: 'api_login')]
-    public function api_login(): JsonResponse
+    public function apiLogin(): JsonResponse
     {
         $client = new Client();
 
