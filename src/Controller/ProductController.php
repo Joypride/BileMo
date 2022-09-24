@@ -5,74 +5,68 @@ namespace App\Controller;
 use App\Entity\Product;
 use App\Form\ProductType;
 use App\Repository\ProductRepository;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-#[Route('/product')]
+#[Route('/products')]
 class ProductController extends AbstractController
 {
-    #[Route('/', name: 'app_product_index', methods: ['GET'])]
-    public function index(ProductRepository $productRepository): Response
+    #[Route('/', name: 'product', methods: ['GET'])]
+    public function getProductList(ProductRepository $productRepository, SerializerInterface $serializer): JsonResponse
     {
-        return $this->render('product/index.html.twig', [
-            'products' => $productRepository->findAll(),
-        ]);
-    }
-
-    #[Route('/new', name: 'app_product_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, ProductRepository $productRepository): Response
-    {
-        $product = new Product();
-        $form = $this->createForm(ProductType::class, $product);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $productRepository->add($product, true);
-
-            return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->renderForm('product/new.html.twig', [
-            'product' => $product,
-            'form' => $form,
-        ]);
+        $productList = $productRepository->findAll();
+        $jsonProductList = $serializer->serialize($productList, 'json');
+        return new JsonResponse($jsonProductList, Response::HTTP_OK, [], true);
     }
 
     #[Route('/{id}', name: 'app_product_show', methods: ['GET'])]
-    public function show(Product $product): Response
+    public function show(Product $product, SerializerInterface $serializer): JsonResponse
     {
-        return $this->render('product/show.html.twig', [
-            'product' => $product,
-        ]);
+            $jsonProduct = $serializer->serialize($product, 'json');
+            return new JsonResponse($jsonProduct, Response::HTTP_OK, ['accept' => 'json'], true);
     }
 
-    #[Route('/{id}/edit', name: 'app_product_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Product $product, ProductRepository $productRepository): Response
+    #[Route('/new', name: 'app_product_new', methods: ['GET', 'POST'])]
+    public function new(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
-        $form = $this->createForm(ProductType::class, $product);
-        $form->handleRequest($request);
+        $product = $serializer->deserialize($request->getContent(), Product::class, 'json');
+        $em->persist($product);
+        $em->flush();
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $productRepository->add($product, true);
+        $jsonProduct = $serializer->serialize($product, 'json');
+        
+        $location = $urlGenerator->generate('app_product_show', ['id' => $product->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
-            return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->renderForm('product/edit.html.twig', [
-            'product' => $product,
-            'form' => $form,
-        ]);
+        return new JsonResponse($jsonProduct, Response::HTTP_CREATED, ["Location" => $location], true);
     }
 
-    #[Route('/{id}', name: 'app_product_delete', methods: ['POST'])]
-    public function delete(Request $request, Product $product, ProductRepository $productRepository): Response
+    #[Route('/{id}/edit', name: 'app_product_edit', methods: ['PUT'])]
+    public function edit(Request $request, SerializerInterface $serializer, Product $currentProduct, EntityManagerInterface $em): JsonResponse
     {
-        if ($this->isCsrfTokenValid('delete'.$product->getId(), $request->request->get('_token'))) {
-            $productRepository->remove($product, true);
-        }
+        $updatedProduct = $serializer->deserialize($request->getContent(), 
+                Product::class, 
+                'json', 
+                [AbstractNormalizer::OBJECT_TO_POPULATE => $currentProduct]);
+        
+        $em->persist($updatedProduct);
+        $em->flush();
+        
+        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+    }
 
-        return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
+    #[Route('/{id}', name: 'app_product_delete', methods: ['DELETE'])]
+    public function delete(Product $product, EntityManagerInterface $em): JsonResponse
+    {
+        $em->remove($product);
+        $em->flush();
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }
