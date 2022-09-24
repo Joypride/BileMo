@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 class Client implements UserInterface, \Serializable, PasswordAuthenticatedUserInterface
@@ -15,21 +16,27 @@ class Client implements UserInterface, \Serializable, PasswordAuthenticatedUserI
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column()]
+    #[Groups(["getClients"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["getClients"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["getClients"])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["getClients"])]
     private ?string $password = null;
 
     #[ORM\Column(type: 'json')]
+    #[Groups(["getClients"])]
     private $roles = [];
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: User::class)]
+    #[Groups(["getClients"])]
     private Collection $users;
 
     public function __construct()
