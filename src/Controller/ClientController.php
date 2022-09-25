@@ -5,12 +5,16 @@ namespace App\Controller;
 use App\Entity\Client;
 use App\Repository\ClientRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
@@ -18,9 +22,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 class ClientController extends AbstractController
 {
     #[Route('/', name: 'client', methods: ['GET'])]
-    public function getClientList(ClientRepository $clientRepository, SerializerInterface $serializer): JsonResponse
+    public function getClientList(Request $request, ClientRepository $clientRepository, SerializerInterface $serializer, TagAwareCacheInterface $cachePool): JsonResponse
     {
         $clientList = $clientRepository->findAll();
+
         $jsonClientList = $serializer->serialize($clientList, 'json', ['groups' => 'getClients']);
         return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
     }
@@ -33,9 +38,18 @@ class ClientController extends AbstractController
     }
 
     #[Route('/new', name: 'app_client_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator): JsonResponse
+    // #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un client')]
+    public function new(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
     {
         $client = $serializer->deserialize($request->getContent(), Client::class, 'json', ['groups' => 'getClients']);
+
+        // On vérifie les erreurs
+        $errors = $validator->validate($client);
+
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json', ['groups' => 'getClients']), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
         $em->persist($client);
         $em->flush();
 

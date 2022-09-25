@@ -29,7 +29,7 @@ class AppFixtures extends Fixture
         $adminPassword = $this->passwordHasher->hashPassword($admin,'pomme');
 
         $admin->setPassword($adminPassword);
-        $admin->setRoles(['ROLE_USER']);
+        $admin->setRoles(['ROLE_ADMIN']);
 
         $manager->persist($admin);
 

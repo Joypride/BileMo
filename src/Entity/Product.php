@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ProductRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 class Product
@@ -14,21 +15,27 @@ class Product
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "La marque est obligatoire")]
     private ?string $brand = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Le nom est obligatoire")]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Le modèle est obligatoire")]
     private ?string $model = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "La couleur est obligatoire")]
     private ?string $color = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank(message: "Le prix est obligatoire")]
     private ?float $price = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Le nom est obligatoire")]
     private ?string $description = null;
 
     public function getId(): ?int

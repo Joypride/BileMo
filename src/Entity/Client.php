@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 class Client implements UserInterface, \Serializable, PasswordAuthenticatedUserInterface
@@ -21,14 +22,17 @@ class Client implements UserInterface, \Serializable, PasswordAuthenticatedUserI
 
     #[ORM\Column(length: 255)]
     #[Groups(["getClients", "getUsers"])]
+    #[Assert\NotBlank(message: "Le nom est obligatoire")]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(["getClients", "getUsers"])]
+    #[Assert\NotBlank(message: "L'email est obligatoire")]
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(["getClients", "getUsers"])]
+    #[Assert\NotBlank(message: "Le mot de passe est obligatoire")]
     private ?string $password = null;
 
     #[ORM\Column(type: 'json')]
@@ -95,8 +99,6 @@ class Client implements UserInterface, \Serializable, PasswordAuthenticatedUserI
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
-        // $roles[] = 'ROLE_USER';
 
         return array_unique($roles);
     }
