@@ -3,33 +3,45 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use JMS\Serializer\Serializer;
 use App\Repository\UserRepository;
+use App\Repository\ClientRepository;
+use JMS\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-#[Route('/users')]
+#[Route('api/users')]
 class UserController extends AbstractController
 {
     #[Route('/', name: 'user', methods: ['GET'])]
-    public function getUserList(UserRepository $userRepository, SerializerInterface $serializer): JsonResponse
-    {
-        $userList = $userRepository->findAll();
-        $jsonUserList = $serializer->serialize($userList, 'json', ['groups' => 'getUsers']);
+    public function getUserList(Request $request, UserRepository $userRepository, SerializerInterface $serializer, TagAwareCacheInterface $cachePool): JsonResponse
+    {     
+        $idCache = "getUserLists";
+        $userList = $cachePool->get($idCache, function (ItemInterface $item) use ($userRepository) {
+            $item->tag("usersCache");
+            return $userRepository->findBy(['client' => $this->getUser()]);
+        });
+
+        $context = SerializationContext::create()->setGroups(['getUsers']);
+        $jsonUserList = $serializer->serialize($userList, 'json', $context);
         return new JsonResponse($jsonUserList, Response::HTTP_OK, [], true);
     }
 
     #[Route('/{id}', name: 'app_user_show', methods: ['GET'])]
     public function show(User $user, SerializerInterface $serializer): JsonResponse
     {
-            $jsonUser = $serializer->serialize($user, 'json', ['groups' => 'getUsers']);
+            $context = SerializationContext::create()->setGroups(['getUsers']);
+            $jsonUser = $serializer->serialize($user, 'json', $context);
             return new JsonResponse($jsonUser, Response::HTTP_OK, ['accept' => 'json'], true);
     }
 
@@ -56,16 +68,39 @@ class UserController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_user_edit', methods: ['PUT'])]
-    public function edit(Request $request, SerializerInterface $serializer, User $currentUser, EntityManagerInterface $em): JsonResponse
+    public function edit(Request $request, SerializerInterface $serializer, User $currentUser, EntityManagerInterface $em, ClientRepository $clientRepository, ValidatorInterface $validator, TagAwareCacheInterface $cache): JsonResponse
     {
-        $updatedUser = $serializer->deserialize($request->getContent(), 
-                User::class, 
-                'json', 
-                [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]);
+        // $updatedUser = $serializer->deserialize($request->getContent(), 
+        //         User::class, 
+        //         'json', 
+        //         [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]);
         
-        $em->persist($updatedUser);
+        // $em->persist($updatedUser);
+        // $em->flush();
+        
+        // return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+
+        $newUser = $serializer->deserialize($request->getContent(), User::class, 'json');
+        $currentUser->setName($newUser->getName());
+        $currentUser->setEmail($newUser->getEmail());
+
+        // On vérifie les erreurs
+        $errors = $validator->validate($currentUser);
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
+        $content = $request->toArray();
+        $idClient = $content['idClient'] ?? -1;
+    
+        $currentUser->setClient($clientRepository->find($idClient));
+
+        $em->persist($currentUser);
         $em->flush();
-        
+
+        // On vide le cache.
+        $cache->invalidateTags(["usersCache"]);
+
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
 

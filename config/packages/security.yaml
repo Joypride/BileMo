@@ -18,7 +18,7 @@ security:
         login:
             pattern: ^/api/login
             stateless: true
-            custom_authenticator: App\Security\LoginAuthenticator
+            # custom_authenticator: App\Security\LoginAuthenticator
             json_login:
                 check_path: /api/login_check
                 success_handler: lexik_jwt_authentication.handler.authentication_success
@@ -29,15 +29,15 @@ security:
             stateless: true
             jwt: ~
 
-        main:
-            lazy: true
-            provider: users
-            custom_authenticator: App\Security\LoginAuthenticator
-            form_login:
-                login_path: /
-                check_path: /
-                default_target_path: /
-            entry_point: form_login
+        # main:
+        #     lazy: true
+        #     provider: users
+        #     custom_authenticator: App\Security\LoginAuthenticator
+        #     form_login:
+        #         login_path: /
+        #         check_path: /
+        #         default_target_path: /
+        #     entry_point: form_login
 
     access_control:
             - { path: ^/api/login, roles: PUBLIC_ACCESS }
