@@ -9,6 +9,7 @@ use App\Repository\ClientRepository;
 use JMS\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use JMS\Serializer\SerializationContext;
+use JMS\Serializer\DeserializationContext;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -46,21 +47,28 @@ class UserController extends AbstractController
     }
 
     #[Route('/new', name: 'app_user_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
+    public function new(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, ClientRepository $clientRepository, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
     {
-        $user = $serializer->deserialize($request->getContent(), User::class, 'json', ['groups' => 'getUsers']);
+        $context = DeserializationContext::create()->setGroups(['getUsers']);
+        $user = $serializer->deserialize($request->getContent(), User::class, 'json', $context);
+
+        $content = $request->toArray();
+        $idClient = $content['idClient'] ?? -1;
+        $user->setClient($clientRepository->find($idClient));
 
         // On vérifie les erreurs
         $errors = $validator->validate($user);
 
         if ($errors->count() > 0) {
-            return new JsonResponse($serializer->serialize($errors, 'json', ['groups' => 'getUsers']), JsonResponse::HTTP_BAD_REQUEST, [], true);
+            $context = SerializationContext::create()->setGroups(['getUsers']);
+            return new JsonResponse($serializer->serialize($errors, 'json', $context), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
         
         $em->persist($user);
         $em->flush();
 
-        $jsonUser = $serializer->serialize($user, 'json', ['groups' => 'getUsers']);
+        $context = SerializationContext::create()->setGroups(['getUsers']);
+        $jsonUser = $serializer->serialize($user, 'json', $context);
         
         $location = $urlGenerator->generate('app_user_show', ['id' => $user->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
@@ -70,16 +78,6 @@ class UserController extends AbstractController
     #[Route('/{id}/edit', name: 'app_user_edit', methods: ['PUT'])]
     public function edit(Request $request, SerializerInterface $serializer, User $currentUser, EntityManagerInterface $em, ClientRepository $clientRepository, ValidatorInterface $validator, TagAwareCacheInterface $cache): JsonResponse
     {
-        // $updatedUser = $serializer->deserialize($request->getContent(), 
-        //         User::class, 
-        //         'json', 
-        //         [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]);
-        
-        // $em->persist($updatedUser);
-        // $em->flush();
-        
-        // return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
-
         $newUser = $serializer->deserialize($request->getContent(), User::class, 'json');
         $currentUser->setName($newUser->getName());
         $currentUser->setEmail($newUser->getEmail());
