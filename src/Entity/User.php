@@ -60,7 +60,7 @@ class User
 
     #[ORM\ManyToOne(inversedBy: 'users', cascade: ["persist"])]
     #[ORM\JoinColumn(nullable: false, onDelete:"CASCADE")]
-    #[Groups(["getUsers"])]
+    // #[Groups(["getUsers"])]
     private ?Client $client = null;
 
     public function getId(): ?int
