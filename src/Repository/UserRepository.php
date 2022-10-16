@@ -22,15 +22,6 @@ class UserRepository extends ServiceEntityRepository
         parent::__construct($registry, User::class);
     }
 
-    // public function findByWithPagination($page, $limit) {
-    //     $qb = $this->createQueryBuilder('u')
-    //         ->andWhere('u.client_id = :val')
-    //         ->setParameter('val', $this->User())
-    //         ->setFirstResult(($page - 1) * $limit)
-    //         ->setMaxResults($limit);
-    //     return $qb->getQuery()->getResult();
-    // }
-
     public function findAllWithPagination($client, $page, $limit) {
         $qb = $this->createQueryBuilder('b')
             ->andWhere('b.client=:client')
@@ -40,18 +31,7 @@ class UserRepository extends ServiceEntityRepository
 
             $paginator = new Paginator($qb);
             return $paginator;
-        // return $qb->getQuery()->getResult();
     }
-
-    // public function findByClient($page, $limit)
-    // {
-    //     $qb = $this->createQueryBuilder('u')
-    //         ->andWhere('u.client_id = :val')
-    //         ->setParameter('val', $this->User())
-    //         ->setFirstResult(($page - 1) * $limit)
-    //         ->setMaxResults($limit);
-    //     return $qb->getQuery()->getResult();
-    // }
 
     public function add(User $entity, bool $flush = false): void
     {
