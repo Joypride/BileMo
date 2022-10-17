@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\User;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\Tools\Pagination\Paginator;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 /**
@@ -22,7 +23,8 @@ class UserRepository extends ServiceEntityRepository
         parent::__construct($registry, User::class);
     }
 
-    public function findAllWithPagination($client, $page, $limit) {
+    public function findAllWithPagination(UserInterface $client, int $page, int $limit): Paginator
+    {
         $qb = $this->createQueryBuilder('b')
             ->andWhere('b.client=:client')
             ->setParameter('client', $client)
