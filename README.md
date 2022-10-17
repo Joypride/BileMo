@@ -1,7 +1,7 @@
 # BileMo
 
 [![forthebadge](https://forthebadge.com/images/badges/built-with-love.svg)](http://forthebadge.com)
-[![SymfonyInsight](https://insight.symfony.com/projects/7f26dd7f-2105-4602-9f7c-09761d4c290c/small.svg)](https://insight.symfony.com/projects/7f26dd7f-2105-4602-9f7c-09761d4c290c)
+[![SymfonyInsight](https://insight.symfony.com/projects/087f7d89-0aed-4b07-8cdf-b34ef662fec0/small.svg)](https://insight.symfony.com/projects/087f7d89-0aed-4b07-8cdf-b34ef662fec0)
 
 ### Installation
 
